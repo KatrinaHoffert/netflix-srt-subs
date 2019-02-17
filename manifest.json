@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+  "name": "Netflix SRT subs",
+  "version": "1.0",
+  "description": "Allows loading custom subtitles on Netflix videos via SRT files.",
+  "icons": {
+    "48": "icons/48.png",
+    "96": "icons/96.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.netflix.com/*"],
+      "js": ["netflix-srt-subs.js"]
+    }
+  ]
+}

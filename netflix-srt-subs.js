@@ -1,4 +1,5 @@
 const DEBUG = true;
+const UPDATE_TIME = 100; // ms
 
 /**
  * Gets the time into the video in seconds.
@@ -32,15 +33,15 @@ function displaySrtFilePicker() {
 	if(videoId === null) return;
 
 	// Remove if existing
-	let existingElement = document.getElementById('netflix-srt-subs-main-box');
-	if(existingElement) {
+	let existingElement = document.getElementById('netflix-srt-subs-picker-box');
+	if(existingElement !== null) {
 		existingElement.outerHTML = '';
 	}
 
 	// TODO: Make this auto-hide
 	let html = htmlToElement(`<div style="position: fixed; top: 0; left: 0; background-color: white;
 			color: black; z-index: 1; padding: 0.25em;"
-			class="netflix-srt-subs-main-box">
+			id="netflix-srt-subs-picker-box">
 			Load subs:
 			<input type="file" id="netflix-srt-subs-file-picker" style="display: none;">
 			<input type="button" value="Browse..." onclick="document.getElementById('netflix-srt-subs-file-picker').click();">
@@ -96,12 +97,27 @@ function getVideoId() {
 }
 
 function displaySubs(videoId, srtContents) {
+	// Remove if existing
+	let existingElement = document.getElementById('netflix-srt-subs-container');
+	if(existingElement !== null) {
+		existingElement.outerHTML = '';
+	}
+
+	let html = htmlToElement(`<div style="position: fixed; left: 50%;
+			transform: translateY(-200%) translateX(-50%); z-index: 1; display: none;"
+			id="netflix-srt-subs-container">
+				<span id="netflix-srt-subs-line" style="background-color: rgba(0%, 0%, 0%, 50%);
+				color: white; font-family: arial; padding: 0.1em; font-size: x-large;"></span>
+			</div>`);
+	document.body.appendChild(html);
+	let subContainerElement = document.getElementById('netflix-srt-subs-container');
+	let subLineElement = document.getElementById('netflix-srt-subs-line');
+
 	let subs = getSubtitleRecords(srtContents);
 	subs.sort((r1, r2) => r1.from - r2.from); // Sort by from times (so we can efficiently handle overlaps)
 
 	setInterval(() => {
 		let time = getTimeInVideo(videoId);
-		console.log(time);
 
 		// Dumb approach: just loop through all the records
 		let currentSub = '';
@@ -114,8 +130,19 @@ function displaySubs(videoId, srtContents) {
 				currentSub += record['text'];
 			}
 		}
-		console.log(currentSub);
-	}, 100)
+
+		subLineElement.innerHTML = currentSub;
+		if(currentSub === '') {
+			subContainerElement.style.display = 'none';
+		}
+		else {
+			subContainerElement.style.display = 'block';
+
+			let offsetFromTop = window.innerHeight;
+			subContainerElement.style.top = `${offsetFromTop}px`;
+		}
+
+	}, UPDATE_TIME)
 }
 
 /**
@@ -237,7 +264,11 @@ function parseTimeStampToSeconds(timestampString) {
 // TODO: detect when video changes and remove subs
 // TODO: strip potentially dangerous HTML
 // TODO: allow offsets
-
-displaySrtFilePicker();
-
-if(DEBUG) console.log('Netflix SRT subs active');
+// TODO: make sub style configurable
+try {
+	displaySrtFilePicker();
+	if(DEBUG) console.log('Netflix SRT subs active');
+}
+catch(ex) {
+	console.log(ex);
+}

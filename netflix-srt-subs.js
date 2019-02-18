@@ -155,7 +155,7 @@ function displaySrtFilePicker() {
 			};
 			reader.onerror = () => {
 				// TODO: handle errors in more user friendly manner
-				console.log(` Netflix SRT subs error occurred reading file ${file.name}`)
+				console.log(`Netflix SRT subs error occurred reading file ${file.name}`)
 			};
 		}
 		else {
@@ -199,7 +199,7 @@ function displaySubs(videoId, srtContents) {
 	let offsetElement = document.getElementById('netflix-srt-subs-offset');
 
 	let subs = getSubtitleRecords(srtContents);
-	subs.sort((r1, r2) => r1.from - r2.from); // Sort by from times (so we can efficiently handle overlaps)
+	subs.sort((r1, r2) => r1['to'] - r2['to']); // Sort by from times (so we can efficiently handle overlaps)
 
 	// Loop indefinitely for subs (indefinitely so that we still display correct subs even when we
 	// seek  in the video).
@@ -214,16 +214,7 @@ function displaySubs(videoId, srtContents) {
 		}
 
 		// Dumb approach: just loop through all the records
-		let currentSub = '';
-		for(let record of subs) {
-			if(time >= record['from'] && time <= record['to']) {
-				// Deal with merged subs
-				if(currentSub !== '') {
-					currentSub += '<br>';
-				}
-				currentSub += `<span>${record['text']}</span>`;
-			}
-		}
+		let currentSub = getSubtitlesForTime(subs, time);
 
 		// Get the controls for nicer positioning
 		let controlsHeight = 0;
@@ -332,6 +323,52 @@ function getSubtitleRecords(srtContents) {
 }
 
 /**
+ * Gets the subtitle record for the current time. This requires us to keep no state about the
+ * video progress, which is good because that would *not* be easy to do. We simply filter to a
+ * small number of records that could fit the time and concatenate them.
+ */
+function getSubtitlesForTime(records, time) {
+	// Does a binary search to find the index of where this time stamp starts having records
+	// that end before this time. There may be many records here that aren't supposed to
+	// start yet, but certainly nothing at this index should be done yet.
+	function binarySearch(t) {
+		let low = 0;
+		let high = records.length - 1;
+		let curr = Math.floor((high + low) / 2);
+		while(low < high) {
+			if(t < records[curr]['to']) {
+				high = curr;
+			}
+			else if(t > records[curr]['to']) {
+				low = curr + 1;
+			}
+			else {
+				return curr;
+			}
+			curr = Math.floor((high + low) / 2);
+		}
+		return curr;
+	}
+
+	let currentSub = '';
+	for(let i = binarySearch(time); i < records.length; ++i) {
+		if(time >= records[i]['from'] && time <= records[i]['to']) {
+			// Deal with merged subs
+			if(currentSub !== '') {
+				currentSub += '<br>';
+			}
+			currentSub += `<span>${records[i]['text']}</span>`;
+		}
+
+		// Since records are ordered by to time, once they exceed the current time, there cannot
+		// be any more valid records for this time.
+		if(time > records[i]['to']) break;
+	}
+
+	return currentSub;
+}
+
+/**
  * SRT allows some HTML, like <b>, <i>, <u>, and <font color="...">. Remove the
  * rest (and potentially dangerous parameters).
  */
@@ -411,7 +448,6 @@ function parseTimeStampToSeconds(timestampString) {
 }
 
 // TODO: make sub style configurable
-// TODO: less repetetion of computation
 
 displaySrtFilePicker();
 if(DEBUG) console.log('Netflix SRT subs active');

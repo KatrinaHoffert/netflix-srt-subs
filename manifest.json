@@ -2,12 +2,21 @@
   "manifest_version": 2,
   "name": "Netflix SRT subs",
   "version": "1.0",
+  "author": "Katrina Mitchell",
+  "developer": {
+    "name": "Katrina Mitchell",
+    "url": "http://katrinahoffert.github.io/"
+  },
   "description": "Allows loading custom subtitles on Netflix videos via SRT files.",
   "icons": {
     "48": "icons/48.png",
     "96": "icons/96.png"
   },
   "permissions": [
+    // Used so we can detect when we navigate from, say, the Netflix main page
+    // to a specific video, as well as when videos transition (since Netflix
+    // apparently has a weird method of loading pages). This is the sole purpose
+    // of the background script.
     "webNavigation"
   ],
   "background": {

@@ -55,15 +55,29 @@ function displaySrtFilePicker() {
 		existingElement.outerHTML = '';
 	}
 
-	// TODO: Make this auto-hide
-	let html = htmlToElement(`<div style="position: fixed; top: 0; left: 0; background-color: white;
-			color: black; z-index: 1; padding: 0.25em;"
+	// Left is 24px for the image plus 4px padding per side = 32px. TranslateX hides the rest till
+	// we hover
+	let html = htmlToElement(`<div style="position: fixed; top: 0; left: 32px; background-color: white;
+			color: black; z-index: 1; padding: 4px; border-radius: 0 0 5px 0; transform: translateX(-100%);
+			animation-duration: 1s;"
 			id="netflix-srt-subs-picker-box">
 			Load subs:
 			<input type="file" id="netflix-srt-subs-file-picker" style="display: none;">
 			<input type="button" value="Browse..." onclick="document.getElementById('netflix-srt-subs-file-picker').click();">
+			<img src="${browser.extension.getURL("icons/48.png")}" alt="Subs"
+			style="width: 24px; vertical-align: middle;" >
 		</div>`);
 	document.body.appendChild(html);
+
+	let subPickerBox = document.getElementById('netflix-srt-subs-picker-box');
+	subPickerBox.addEventListener('mouseover', () => {
+		subPickerBox.style.left = '0';
+		subPickerBox.style.transform = '';
+	});
+	subPickerBox.addEventListener('mouseout', () => {
+		subPickerBox.style.left = '32px';
+		subPickerBox.style.transform = 'translateX(-100%)';
+	});
 
 	let fileInput = document.getElementById('netflix-srt-subs-file-picker');
 	fileInput.addEventListener('change', () => {

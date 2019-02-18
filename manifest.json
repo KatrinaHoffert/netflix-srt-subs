@@ -12,5 +12,8 @@
       "matches": ["*://*.netflix.com/*"],
       "js": ["netflix-srt-subs.js"]
     }
+  ],
+  "web_accessible_resources": [
+    "icons/48.png"
   ]
 }

@@ -1,6 +1,7 @@
 const DEBUG = true;
 const UPDATE_TIME = 100; // ms
 const SUBS_BOTTOM_PADDING_PERCENT = 0.10;
+const BUTTON_FADEOUT_TIME = 3000; // ms
 
 /**
  * Gets the time into the video in seconds.
@@ -69,14 +70,41 @@ function displaySrtFilePicker() {
 		</div>`);
 	document.body.appendChild(html);
 
+	// Auto show and hide the subtitle loader on hover
+	let elementUnderMouse = false;
 	let subPickerBox = document.getElementById('netflix-srt-subs-picker-box');
 	subPickerBox.addEventListener('mouseover', () => {
 		subPickerBox.style.left = '0';
 		subPickerBox.style.transform = '';
+		elementUnderMouse = true;
 	});
 	subPickerBox.addEventListener('mouseout', () => {
 		subPickerBox.style.left = '32px';
 		subPickerBox.style.transform = 'translateX(-100%)';
+		elementUnderMouse = false;
+	});
+	let lastMouseMovement = Date.now();
+	document.addEventListener('mousemove', () => {
+		lastMouseMovement = Date.now();
+		subPickerBox.style.opacity = '100';
+
+		// Fade out if the mouse isn't moved for a bit and we're not over the element
+		let fadeFunc = () => {
+			let elapsedTimeSinceMouseMovement = Date.now() - lastMouseMovement;
+			if(!elementUnderMouse && elapsedTimeSinceMouseMovement >= BUTTON_FADEOUT_TIME) {
+				subPickerBox.style.opacity = '0';
+			}
+			else {
+				// Restart timer for either the remaining time or the full period if we're still
+				// over the element.
+				let timeToGive = elapsedTimeSinceMouseMovement - BUTTON_FADEOUT_TIME;
+				if(elementUnderMouse) {
+					timeToGive = BUTTON_FADEOUT_TIME;
+				}
+				setTimeout(fadeFunc, timeToGive);
+			}
+		}
+		setTimeout(fadeFunc, BUTTON_FADEOUT_TIME);
 	});
 
 	let fileInput = document.getElementById('netflix-srt-subs-file-picker');
@@ -136,7 +164,7 @@ function displaySubs(videoId, srtContents) {
 
 	let html = htmlToElement(`<div style="position: fixed; left: 50%; max-width: 50%;
 			transform: translateY(-100%) translateX(-50%); z-index: 1; display: none;
-			text-align: center;"
+			text-align: center; transition: 0.5s;"
 			id="netflix-srt-subs-container">
 				<span id="netflix-srt-subs-line" style="background-color: rgba(0%, 0%, 0%, 50%);
 				color: white; font-family: arial; padding: 0.1em; font-size: x-large;"></span>
@@ -193,7 +221,9 @@ function displaySubs(videoId, srtContents) {
 			subContainerElement.style.display = 'block';
 
 			let offsetFromTop = window.innerHeight;
-			if(areControlsVisible) offsetFromTop -= controlsHeight;
+			if(areControlsVisible) {
+				offsetFromTop -= controlsHeight;
+			}
 			offsetFromTop -= offsetFromTop * SUBS_BOTTOM_PADDING_PERCENT;
 			subContainerElement.style.top = `${offsetFromTop}px`;
 		}

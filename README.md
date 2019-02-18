@@ -46,6 +46,12 @@ The SRT format is also simple enough to write in a plain text editor.
 * Subtitle positioning is aware of the video size and if controls are visible,
   resulting in an experience comparable to Netflix's native subtitles.
 
+## Images
+
+![](https://i.imgur.com/Ok8eE7q.jpg)
+
+![](https://i.imgur.com/NxYbVGg.jpg)
+
 ## Found a bug?
 
 Sadly, the nature of Netflix not having any form of official API for their

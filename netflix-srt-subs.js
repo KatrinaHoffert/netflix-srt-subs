@@ -75,6 +75,8 @@ function displaySrtFilePicker() {
 			<input type="button" id="netflix-srt-subs-browse-button" value="Browse..."
 			onclick="document.getElementById('netflix-srt-subs-file-picker').click();">
 			<img src="${browser.extension.getURL("icons/48.png")}" alt="Subs">
+			<br>
+			Offset: <input type="number" id="netflix-srt-subs-offset" value="0.0" step="0.1">
 		</div>`);
 	document.body.appendChild(html);
 
@@ -182,12 +184,16 @@ function displaySubs(videoId, srtContents) {
 	let html = htmlToElement(`<div id="netflix-srt-subs-container"></div>`);
 	document.body.appendChild(html);
 	let subContainerElement = document.getElementById('netflix-srt-subs-container');
+	let offsetElement = document.getElementById('netflix-srt-subs-offset');
 
 	let subs = getSubtitleRecords(srtContents);
 	subs.sort((r1, r2) => r1.from - r2.from); // Sort by from times (so we can efficiently handle overlaps)
 
+	// Loop indefinitely for subs (indefinitely so that we still display correct subs even when we
+	// seek  in the video).
 	intervalId = setInterval(() => {
 		let time = getTimeInVideo(videoId);
+		time += offsetElement.value;
 
 		// Unfortunately, this can legit happen by simply loading the subs before the video has
 		// loaded. There is no good way to detect if the video has failed to be detected.
@@ -356,9 +362,7 @@ function parseTimeStampToSeconds(timestampString) {
 }
 
 // TODO: strip potentially dangerous HTML
-// TODO: allow offsets to subs
 // TODO: allow clearing subs
-// TODO: use CSS
 // TODO: make sub style configurable
 // TODO: less repetetion of computation
 

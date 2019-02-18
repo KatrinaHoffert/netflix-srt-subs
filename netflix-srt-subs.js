@@ -193,7 +193,7 @@ function displaySubs(videoId, srtContents) {
 	// seek  in the video).
 	intervalId = setInterval(() => {
 		let time = getTimeInVideo(videoId);
-		time += offsetElement.value;
+		time += parseFloat(offsetElement.value);
 
 		// Unfortunately, this can legit happen by simply loading the subs before the video has
 		// loaded. There is no good way to detect if the video has failed to be detected.

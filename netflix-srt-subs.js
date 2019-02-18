@@ -1,8 +1,11 @@
-const DEBUG = true;
+const DEBUG = false;
 const UPDATE_TIME = 100; // ms
 const SUBS_BOTTOM_PADDING_PERCENT = 0.10;
 const BUTTON_FADEOUT_TIME = 3000; // ms
 
+// Stores the interval ID that we use for our update loop. We use intervals to update subs due
+// to the complexity of dealing with situations such as Netflix needing to buffer, seeking, etc.
+// We store this ID so we can stop the intervals when we remove subtitles or leave the video.
 let intervalId = null;
 
 /**

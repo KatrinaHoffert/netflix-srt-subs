@@ -64,7 +64,8 @@ function displaySrtFilePicker() {
 			id="netflix-srt-subs-picker-box">
 			Load subs:
 			<input type="file" id="netflix-srt-subs-file-picker" style="display: none;">
-			<input type="button" value="Browse..." onclick="document.getElementById('netflix-srt-subs-file-picker').click();">
+			<input type="button" id="netflix-srt-subs-browse-button" value="Browse..."
+			onclick="document.getElementById('netflix-srt-subs-file-picker').click();">
 			<img src="${browser.extension.getURL("icons/48.png")}" alt="Subs"
 			style="width: 24px; vertical-align: middle;" >
 		</div>`);
@@ -83,6 +84,8 @@ function displaySrtFilePicker() {
 		subPickerBox.style.transform = 'translateX(-100%)';
 		elementUnderMouse = false;
 	});
+
+	// Hide even the little "nub" after a bit
 	let lastMouseMovement = Date.now();
 	document.addEventListener('mousemove', () => {
 		lastMouseMovement = Date.now();
@@ -107,8 +110,18 @@ function displaySrtFilePicker() {
 		setTimeout(fadeFunc, BUTTON_FADEOUT_TIME);
 	});
 
+	// Read the selected SRT file once we select a file
 	let fileInput = document.getElementById('netflix-srt-subs-file-picker');
 	fileInput.addEventListener('change', () => {
+		// Refocus video controls so spacebar can pause
+		let playButtons = document.getElementsByClassName('default-control-button button-nfplayerPlay');
+		if(playButtons.length >= 1) {
+			playButtons[0].focus();
+		}
+		else {
+			console.log('Cannot refocus play button. Maybe Netflix broke this or video not yet loaded?');
+		}
+
 		var file = fileInput.files[0];
 		if(file) {
 			if(DEBUG) console.log(`Netflix SRT subs loading file ${file.name}`);
@@ -120,7 +133,7 @@ function displaySrtFilePicker() {
 				displaySubs(videoId, fileContents)
 			};
 			reader.onerror = () => {
-				// TODO: handle nicely
+				// TODO: handle errors in more user friendly manner
 				console.log(` Netflix SRT subs error occurred reading file ${file.name}`)
 			};
 		}
@@ -165,13 +178,9 @@ function displaySubs(videoId, srtContents) {
 	let html = htmlToElement(`<div style="position: fixed; left: 50%; max-width: 50%;
 			transform: translateY(-100%) translateX(-50%); z-index: 1; display: none;
 			text-align: center; transition: 0.5s;"
-			id="netflix-srt-subs-container">
-				<span id="netflix-srt-subs-line" style="background-color: rgba(0%, 0%, 0%, 50%);
-				color: white; font-family: arial; padding: 0.1em; font-size: x-large;"></span>
-			</div>`);
+			id="netflix-srt-subs-container"></div>`);
 	document.body.appendChild(html);
 	let subContainerElement = document.getElementById('netflix-srt-subs-container');
-	let subLineElement = document.getElementById('netflix-srt-subs-line');
 
 	let subs = getSubtitleRecords(srtContents);
 	subs.sort((r1, r2) => r1.from - r2.from); // Sort by from times (so we can efficiently handle overlaps)
@@ -194,7 +203,11 @@ function displaySubs(videoId, srtContents) {
 				if(currentSub !== '') {
 					currentSub += '<br>';
 				}
-				currentSub += record['text'];
+				// Display: inline-block so that the background size matches any text size set
+				// in the SRT
+				currentSub += `<span style="background-color: rgba(0%, 0%, 0%, 50%); color: white;
+						font-family: arial; padding: 0.1em; font-size: x-large; display:inline-block;
+						line-height: 1; margin: 0.1em;">${record['text']}</span>`;
 			}
 		}
 
@@ -213,7 +226,7 @@ function displaySubs(videoId, srtContents) {
 		let videoRealWidth = getVideoRealPixelWidth(videoId);
 		subContainerElement.style.width = `${videoRealWidth}px`;
 
-		subLineElement.innerHTML = currentSub;
+		subContainerElement.innerHTML = currentSub;
 		if(currentSub === '') {
 			subContainerElement.style.display = 'none';
 		}
@@ -346,7 +359,6 @@ function parseTimeStampToSeconds(timestampString) {
 	return timestamp;
 }
 
-// TODO: make container to display subs in
 // TODO: detect when video changes and remove subs
 // TODO: strip potentially dangerous HTML
 // TODO: allow offsets

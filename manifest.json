@@ -7,13 +7,6 @@
     "48": "icons/48.png",
     "96": "icons/96.png"
   },
-  "browser_action": {
-    "default_icon": {
-      "48": "icons/48.png"
-    },
-    "default_title": "Netflix SRT subs",
-    "default_popup": "browser-action.html"
-  },
   "content_scripts": [
     {
       "matches": ["*://*.netflix.com/*"],

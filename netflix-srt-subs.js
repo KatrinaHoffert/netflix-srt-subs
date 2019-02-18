@@ -3,6 +3,8 @@ const UPDATE_TIME = 100; // ms
 const SUBS_BOTTOM_PADDING_PERCENT = 0.10;
 const BUTTON_FADEOUT_TIME = 3000; // ms
 
+let intervalId = null;
+
 /**
  * Gets the time into the video in seconds.
  */
@@ -42,19 +44,30 @@ function htmlToElement(html) {
 }
 
 /**
- * Displays a file picker to select an SRT file. This must be done since browser
- * actions will close the moment a file picker is opened, which makes it impossible
- * to have any interaction at all.
+ * Removes elements by ID, if they exist. Otherwise does nothing.
  */
-function displaySrtFilePicker() {
-	let videoId = getVideoId();
-	if(videoId === null) return;
-
-	// Remove if existing
-	let existingElement = document.getElementById('netflix-srt-subs-picker-box');
+function removeElementById(id) {
+	let existingElement = document.getElementById(id);
 	if(existingElement !== null) {
 		existingElement.outerHTML = '';
 	}
+}
+
+/**
+ * Displays a file picker to select an SRT file. This must be done since browser
+ * actions will close the moment a file picker is opened, which makes it impossible
+ * to have any interaction at all. When an SRT file is chosen, we will process it
+ * and start displaying subtitles according to the current timestamp of the video.
+ */
+function displaySrtFilePicker() {
+	// Since this method is called at the start, when the addon is refreshed, and on history
+	// state update, clear anything that may already exist from a previous run.
+	removeElementById('netflix-srt-subs-picker-box');
+	removeElementById('netflix-srt-subs-container');
+	if(intervalId !== null) clearInterval(intervalId);
+
+	let videoId = getVideoId();
+	if(videoId === null) return;
 
 	// Left is 24px for the image plus 4px padding per side = 32px. TranslateX hides the rest till
 	// we hover
@@ -149,17 +162,11 @@ function displaySrtFilePicker() {
 function getVideoId() {
 	// Get the URL without any query parameters or anchors
 	let url = window.location.href;
-	url = url.split('?')[0];
-	url = url.split('#')[0]; // In case there is no query parameters
+	if(DEBUG) console.log(`Netflix SRT subs URL: ${url}`);
 
-	// URL is, eg, https://www.netflix.com/watch/70136341 -- want the 70136341
-	let urlSplitOnSlash = url.split('/');
-	let videoId = urlSplitOnSlash[urlSplitOnSlash.length - 1];
-
-	if(DEBUG) console.log(`Netflix SRT subs URL: ${url} Video ID: ${videoId}`);
-
-	// We seem to be on a video page
-	if(videoId.match(/\d+/)) {
+	match = /netflix\.[a-z]+\/watch\/([0-9]+)/i.exec(url);
+	if(match !== null && match.length > 1) {
+		let videoId = match[1];
 		if(DEBUG) console.log(`Netflix SRT subs detected this page to be a video (id = ${videoId})`);
 		return videoId;
 	}
@@ -168,6 +175,9 @@ function getVideoId() {
 	}
 }
 
+/**
+ * Given the contents of an SRT file, displays the subs in sync with the current video.
+ */
 function displaySubs(videoId, srtContents) {
 	// Remove if existing
 	let existingElement = document.getElementById('netflix-srt-subs-container');
@@ -185,8 +195,7 @@ function displaySubs(videoId, srtContents) {
 	let subs = getSubtitleRecords(srtContents);
 	subs.sort((r1, r2) => r1.from - r2.from); // Sort by from times (so we can efficiently handle overlaps)
 
-
-	setInterval(() => {
+	intervalId = setInterval(() => {
 		let time = getTimeInVideo(videoId);
 
 		// Unfortunately, this can legit happen by simply loading the subs before the video has
@@ -359,11 +368,22 @@ function parseTimeStampToSeconds(timestampString) {
 	return timestamp;
 }
 
-// TODO: detect when video changes and remove subs
 // TODO: strip potentially dangerous HTML
-// TODO: allow offsets
+// TODO: allow offsets to subs
+// TODO: allow clearing subs
+// TODO: use CSS
 // TODO: make sub style configurable
 // TODO: less repetetion of computation
 
 displaySrtFilePicker();
 if(DEBUG) console.log('Netflix SRT subs active');
+
+// Netflix's homepage doesn't actually load a new page when you choose a video, so when we detect
+// the history has changed, then we probably loaded a new video, so determine again if we should
+// be displaying the file picker.
+browser.runtime.onMessage.addListener((data) => {
+	if (data.action === "pageChanged") {
+		if(DEBUG) console.log('Netflix SRT subs page changed');
+		displaySrtFilePicker();
+	}
+});

@@ -1,5 +1,6 @@
 const DEBUG = true;
 const UPDATE_TIME = 100; // ms
+const SUBS_BOTTOM_PADDING_PERCENT = 0.10;
 
 /**
  * Gets the time into the video in seconds.
@@ -9,6 +10,22 @@ function getTimeInVideo(videoId) {
 	let video = document.evaluate(`//*[@id="${videoId}"]/video`, document).iterateNext();
 	if(video) {
 		return video.currentTime;
+	}
+	else {
+		return null;
+	}
+}
+
+/**
+ * Gets the width of the video, so we can avoid having subtitles in the letterbox area.
+ * This works by the assumption that the video will take up 100% height. Then we can
+ * Figure out the real width from this and the aspect ratio.
+ */
+function getVideoRealPixelWidth(videoId) {
+	let video = document.evaluate(`//*[@id="${videoId}"]/video`, document).iterateNext();
+	if(video) {
+		let aspectRatio = video.videoWidth / video.videoHeight;
+		return video.offsetHeight * aspectRatio;
 	}
 	else {
 		return null;
@@ -52,7 +69,7 @@ function displaySrtFilePicker() {
 	fileInput.addEventListener('change', () => {
 		var file = fileInput.files[0];
 		if(file) {
-			if(DEBUG) console.log(`Netflix SRT subs loading file ${file}`);
+			if(DEBUG) console.log(`Netflix SRT subs loading file ${file.name}`);
 			var reader = new FileReader();
 			reader.readAsText(file, "UTF-8");
 			reader.onload = (ev) => {
@@ -62,7 +79,7 @@ function displaySrtFilePicker() {
 			};
 			reader.onerror = () => {
 				// TODO: handle nicely
-				console.log(` Netflix SRT subs error occurred reading file ${file}`)
+				console.log(` Netflix SRT subs error occurred reading file ${file.name}`)
 			};
 		}
 		else {
@@ -103,8 +120,9 @@ function displaySubs(videoId, srtContents) {
 		existingElement.outerHTML = '';
 	}
 
-	let html = htmlToElement(`<div style="position: fixed; left: 50%;
-			transform: translateY(-200%) translateX(-50%); z-index: 1; display: none;"
+	let html = htmlToElement(`<div style="position: fixed; left: 50%; max-width: 50%;
+			transform: translateY(-100%) translateX(-50%); z-index: 1; display: none;
+			text-align: center;"
 			id="netflix-srt-subs-container">
 				<span id="netflix-srt-subs-line" style="background-color: rgba(0%, 0%, 0%, 50%);
 				color: white; font-family: arial; padding: 0.1em; font-size: x-large;"></span>
@@ -116,8 +134,15 @@ function displaySubs(videoId, srtContents) {
 	let subs = getSubtitleRecords(srtContents);
 	subs.sort((r1, r2) => r1.from - r2.from); // Sort by from times (so we can efficiently handle overlaps)
 
+
 	setInterval(() => {
 		let time = getTimeInVideo(videoId);
+
+		// Unfortunately, this can legit happen by simply loading the subs before the video has
+		// loaded. There is no good way to detect if the video has failed to be detected.
+		if(time === null) {
+			return;
+		}
 
 		// Dumb approach: just loop through all the records
 		let currentSub = '';
@@ -131,6 +156,21 @@ function displaySubs(videoId, srtContents) {
 			}
 		}
 
+		// Get the controls for nicer positioning
+		let controlsHeight = 0;
+		let controlsElements = document.getElementsByClassName('PlayerControlsNeo__bottom-controls');
+		let areControlsVisible = controlsElements.length === 1 &&
+				!controlsElements[0].className.includes('PlayerControlsNeo__bottom-controls--faded');
+		if(controlsElements.length === 0) {
+			console.log('Could not find controls. Maybe Netflix broke this feature?');
+		}
+		else {
+			controlsHeight = controlsElements[0].offsetHeight;
+		}
+
+		let videoRealWidth = getVideoRealPixelWidth(videoId);
+		subContainerElement.style.width = `${videoRealWidth}px`;
+
 		subLineElement.innerHTML = currentSub;
 		if(currentSub === '') {
 			subContainerElement.style.display = 'none';
@@ -139,6 +179,8 @@ function displaySubs(videoId, srtContents) {
 			subContainerElement.style.display = 'block';
 
 			let offsetFromTop = window.innerHeight;
+			if(areControlsVisible) offsetFromTop -= controlsHeight;
+			offsetFromTop -= offsetFromTop * SUBS_BOTTOM_PADDING_PERCENT;
 			subContainerElement.style.top = `${offsetFromTop}px`;
 		}
 
@@ -265,10 +307,7 @@ function parseTimeStampToSeconds(timestampString) {
 // TODO: strip potentially dangerous HTML
 // TODO: allow offsets
 // TODO: make sub style configurable
-try {
-	displaySrtFilePicker();
-	if(DEBUG) console.log('Netflix SRT subs active');
-}
-catch(ex) {
-	console.log(ex);
-}
+// TODO: less repetetion of computation
+
+displaySrtFilePicker();
+if(DEBUG) console.log('Netflix SRT subs active');

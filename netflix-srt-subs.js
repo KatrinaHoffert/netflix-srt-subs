@@ -69,18 +69,12 @@ function displaySrtFilePicker() {
 	let videoId = getVideoId();
 	if(videoId === null) return;
 
-	// Left is 24px for the image plus 4px padding per side = 32px. TranslateX hides the rest till
-	// we hover
-	let html = htmlToElement(`<div style="position: fixed; top: 0; left: 32px; background-color: white;
-			color: black; z-index: 1; padding: 4px; border-radius: 0 0 5px 0; transform: translateX(-100%);
-			animation-duration: 1s;"
-			id="netflix-srt-subs-picker-box">
+	let html = htmlToElement(`<div id="netflix-srt-subs-picker-box" style="transform: translateX(-100%);">
 			Load subs:
 			<input type="file" id="netflix-srt-subs-file-picker" style="display: none;" accept=".srt">
 			<input type="button" id="netflix-srt-subs-browse-button" value="Browse..."
 			onclick="document.getElementById('netflix-srt-subs-file-picker').click();">
-			<img src="${browser.extension.getURL("icons/48.png")}" alt="Subs"
-			style="width: 24px; vertical-align: middle;" >
+			<img src="${browser.extension.getURL("icons/48.png")}" alt="Subs">
 		</div>`);
 	document.body.appendChild(html);
 
@@ -185,10 +179,7 @@ function displaySubs(videoId, srtContents) {
 		existingElement.outerHTML = '';
 	}
 
-	let html = htmlToElement(`<div style="position: fixed; left: 50%; max-width: 50%;
-			transform: translateY(-100%) translateX(-50%); z-index: 1; display: none;
-			text-align: center; transition: 0.5s;"
-			id="netflix-srt-subs-container"></div>`);
+	let html = htmlToElement(`<div id="netflix-srt-subs-container"></div>`);
 	document.body.appendChild(html);
 	let subContainerElement = document.getElementById('netflix-srt-subs-container');
 
@@ -212,11 +203,7 @@ function displaySubs(videoId, srtContents) {
 				if(currentSub !== '') {
 					currentSub += '<br>';
 				}
-				// Display: inline-block so that the background size matches any text size set
-				// in the SRT
-				currentSub += `<span style="background-color: rgba(0%, 0%, 0%, 50%); color: white;
-						font-family: arial; padding: 0.1em; font-size: x-large; display:inline-block;
-						line-height: 1; margin: 0.1em;">${record['text']}</span>`;
+				currentSub += `<span>${record['text']}</span>`;
 			}
 		}
 

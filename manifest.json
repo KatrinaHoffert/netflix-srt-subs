@@ -16,6 +16,7 @@
   "content_scripts": [
     {
       "matches": ["*://*.netflix.com/*"],
+      "css": ["netflix-srt-subs.css"],
       "js": ["netflix-srt-subs.js"]
     }
   ],

@@ -1,0 +1,43 @@
+#netflix-srt-subs-picker-box {
+	position: fixed;
+	top: 0;
+	/* Left is 24px for the image plus 4px padding per side = 32px. TranslateX hides the rest till
+	   we hover */
+	left: 32px;
+	background-color: white;
+	color: black;
+	z-index: 1;
+	padding: 4px;
+	border-radius: 0 0 5px 0;
+	transition: 0.5s;
+}
+
+#netflix-srt-subs-picker-box img {
+	width: 24px;
+	vertical-align: middle;
+}
+
+#netflix-srt-subs-container {
+	position: fixed;
+	left: 50%;
+	max-width: 80%;
+	/* Lets us position relative to the bottom (top is set to the width of the container, minus
+	   some padding) and center. */
+	transform: translateY(-100%) translateX(-50%);
+	z-index: 1;
+	display: none;
+	text-align: center;
+	transition: 0.5s;
+}
+
+#netflix-srt-subs-container span {
+	background-color: rgba(0%, 0%, 0%, 50%);
+	color: white;
+	font-family: arial;
+	padding: 0.1em;
+	font-size: x-large;
+	/* Display: inline-block so that the background size matches any text size set in the SRT */
+	display:inline-block;
+	line-height: 1;
+	margin: 0.1em;
+}

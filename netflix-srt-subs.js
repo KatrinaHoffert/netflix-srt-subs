@@ -305,7 +305,7 @@ function getSubtitleRecords(srtContents) {
 			if(subtitleText !== '') {
 				subtitleText += '<br>';
 			}
-			subtitleText += line;
+			subtitleText += escapeDangerousHtml(line);
 		}
 
 		// We now have a subtitle record!
@@ -317,6 +317,43 @@ function getSubtitleRecords(srtContents) {
 	}
 
 	return subtitleRecords;
+}
+
+/**
+ * SRT allows some HTML, like <b>, <i>, <u>, and <font color="...">. Remove the
+ * rest (and potentially dangerous parameters).
+ */
+function escapeDangerousHtml(text) {
+	// Wrap in span because we may have multiple nodes
+	let whitelistNodes = ['b', 'i', 'u', 'font', '#text', 'br'];
+	let whitelistParameters = ['color', 'size'];
+	let html = htmlToElement(`<span>${text}</span>`);
+	function escapeRecursively(element) {
+		if(whitelistNodes.indexOf(element.nodeName.toLowerCase()) === -1) {
+			element.parentElement.replaceChild(document.createTextNode(element.innerText), element);
+		}
+		else {
+			if('attributes' in element) {
+				let attributesToRemove = [];
+				for(let attrIndex = 0; attrIndex < element.attributes.length; ++attrIndex) {
+					let attr = element.attributes.item(attrIndex);
+					if(whitelistParameters.indexOf(attr.localName) === -1) {
+						attributesToRemove.push(attr.localName);
+					}
+				}
+				for(let attribute of attributesToRemove) {
+					element.removeAttribute(attribute);
+				}
+			}
+			for(let i = 0; i < element.childNodes.length; ++i) {
+				escapeRecursively(element.childNodes[i]);
+			}
+		}
+	}
+	for(let i = 0; i < html.childNodes.length; ++i) {
+		escapeRecursively(html.childNodes[i]);
+	}
+	return html.innerHTML;
 }
 
 /**
@@ -361,7 +398,6 @@ function parseTimeStampToSeconds(timestampString) {
 	return timestamp;
 }
 
-// TODO: strip potentially dangerous HTML
 // TODO: allow clearing subs
 // TODO: make sub style configurable
 // TODO: less repetetion of computation

@@ -76,7 +76,7 @@ function displaySrtFilePicker() {
 			animation-duration: 1s;"
 			id="netflix-srt-subs-picker-box">
 			Load subs:
-			<input type="file" id="netflix-srt-subs-file-picker" style="display: none;">
+			<input type="file" id="netflix-srt-subs-file-picker" style="display: none;" accept=".srt">
 			<input type="button" id="netflix-srt-subs-browse-button" value="Browse..."
 			onclick="document.getElementById('netflix-srt-subs-file-picker').click();">
 			<img src="${browser.extension.getURL("icons/48.png")}" alt="Subs"

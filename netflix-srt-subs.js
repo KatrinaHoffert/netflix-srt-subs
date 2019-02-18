@@ -62,9 +62,9 @@ function removeElementById(id) {
 function displaySrtFilePicker() {
 	// Since this method is called at the start, when the addon is refreshed, and on history
 	// state update, clear anything that may already exist from a previous run.
+	if(intervalId !== null) clearInterval(intervalId);
 	removeElementById('netflix-srt-subs-picker-box');
 	removeElementById('netflix-srt-subs-container');
-	if(intervalId !== null) clearInterval(intervalId);
 
 	let videoId = getVideoId();
 	if(videoId === null) return;
@@ -77,6 +77,7 @@ function displaySrtFilePicker() {
 			<img src="${browser.extension.getURL("icons/48.png")}" alt="Subs">
 			<br>
 			Offset: <input type="number" id="netflix-srt-subs-offset" value="0.0" step="0.1">
+			<a id="netflix-srt-subs-clear" href="#" style="display: none;" title="Remove subtitles">&#x274C;</a>
 		</div>`);
 	document.body.appendChild(html);
 
@@ -119,6 +120,16 @@ function displaySrtFilePicker() {
 		setTimeout(fadeFunc, BUTTON_FADEOUT_TIME);
 	});
 
+	// Button to remove subs
+	let clearButton = document.getElementById('netflix-srt-subs-clear');
+	clearButton.addEventListener('click', () => {
+		if(intervalId !== null) clearInterval(intervalId);
+		removeElementById('netflix-srt-subs-container');
+		document.getElementById('netflix-srt-subs-offset').value = "0.0";
+		clearButton.style.display = 'none';
+		return false;
+	});
+
 	// Read the selected SRT file once we select a file
 	let fileInput = document.getElementById('netflix-srt-subs-file-picker');
 	fileInput.addEventListener('change', () => {
@@ -137,6 +148,7 @@ function displaySrtFilePicker() {
 			var reader = new FileReader();
 			reader.readAsText(file, "UTF-8");
 			reader.onload = (ev) => {
+				document.getElementById('netflix-srt-subs-clear').style.display = 'inline';
 				let fileContents = ev.target.result;
 
 				displaySubs(videoId, fileContents)
@@ -398,7 +410,6 @@ function parseTimeStampToSeconds(timestampString) {
 	return timestamp;
 }
 
-// TODO: allow clearing subs
 // TODO: make sub style configurable
 // TODO: less repetetion of computation
 

@@ -1,9 +1,13 @@
 # Netflix SRT Subs
 
+**Abandoned: I don't have time to work on this and changes on Netflix's end have broken the extension. Feel free to fork it if you wish to fix it!**
+
 This is a Firefox addon for loading arbitrary subtitles in the SRT format onto
 any Netflix video. This lets you fill in the gaps for titles that are missing
 subtitles as well as allow you to use foreign languages that do not have
 subtitles!
+
+https://addons.mozilla.org/en-US/developers/addon/netflix-srt-subs/edit
 
 ## Usage
 
